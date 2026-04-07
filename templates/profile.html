@@ -1,1 +1,20 @@
-
+{% extends "base.html" %}
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-body">
+                <h3>Shop Profile</h3>
+                <form method="POST">
+                    <div class="mb-3"><label>Shop Name</label><input type="text" name="shop_name" class="form-control" value="{{ user.shop_name }}" required></div>
+                    <div class="mb-3"><label>Phone Number</label><input type="tel" class="form-control" value="{{ user.phone }}" disabled></div>
+                    <div class="mb-3"><label>TIN (Taxpayer ID)</label><input type="text" name="tin" class="form-control" value="{{ user.tin or '' }}"></div>
+                    <div class="mb-3 form-check"><input type="checkbox" name="is_vat" id="is_vat" class="form-check-input" {% if user.is_vat_registered %}checked{% endif %}><label for="is_vat">Registered for VAT</label></div>
+                    <button type="submit" class="btn btn-primary">Update Profile</button>
+                    <a href="{{ url_for('dashboard') }}" class="btn btn-secondary">Cancel</a>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
