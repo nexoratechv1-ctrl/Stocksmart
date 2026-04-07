@@ -13,5 +13,9 @@
 <div class="row mt-4">
     <div class="col-md-6"><div class="card"><div class="card-body"><h5>Quick Actions</h5><a href="{{ url_for('sell') }}" class="btn btn-success me-2"><i class="fas fa-cash-register"></i> Make Sale</a><a href="{{ url_for('add_product') }}" class="btn btn-primary"><i class="fas fa-plus"></i> Add Product</a></div></div></div>
     <div class="col-md-6"><div class="card"><div class="card-body"><h5>Tips</h5><p>Keep your stock updated. Low stock items need reordering.</p></div></div></div>
+</div><div class="text-end mb-3">
+    <button id="copyLinkBtn" class="btn btn-sm btn-outline-primary">
+        <i class="fas fa-link"></i> Copy Shop Link
+    </button>
 </div>
 {% endblock %}
