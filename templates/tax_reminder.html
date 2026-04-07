@@ -1,1 +1,26 @@
-
+{% extends "base.html" %}
+{% block content %}
+<h2>Tax Reminder & Compliance</h2>
+<div class="card mb-4">
+    <div class="card-body">
+        <h5 class="card-title">VAT Information</h5>
+        <p><strong>TIN:</strong> {{ tin or 'Not set' }} <a href="{{ url_for('profile') }}">Update</a></p>
+        <p><strong>VAT Registered:</strong> {% if current_user.is_vat_registered %}Yes{% else %}No{% endif %}</p>
+        {% if current_user.is_vat_registered and tin %}
+            <p><strong>Estimated VAT Due this month:</strong> TZS {{ "{:,.0f}".format(vat_due) }}</p>
+            <p><strong>Due Date:</strong> {{ due_date.strftime('%d %b %Y') if due_date else 'N/A' }}</p>
+            <p><strong>Days remaining:</strong> {{ days_left if days_left else 0 }}</p>
+            <div class="alert alert-warning">Please ensure to file your VAT return on time to avoid penalties.</div>
+        {% else %}
+            <p>You are not registered for VAT. If you exceed TZS 100M annual turnover, you must register.</p>
+        {% endif %}
+    </div>
+</div>
+<div class="card">
+    <div class="card-body">
+        <h5>Income Tax Reminder</h5>
+        <p>For small businesses, income tax is due by 30th June each year. Keep your records ready.</p>
+        <a href="https://www.tra.go.tz" target="_blank" class="btn btn-outline-primary">Visit TRA Website</a>
+    </div>
+</div>
+{% endblock %}
