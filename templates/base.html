@@ -64,6 +64,12 @@
         if ('serviceWorker' in navigator) {
             navigator.serviceWorker.register('/service-worker.js').then(reg => console.log('SW registered', reg)).catch(err => console.log('SW failed', err));
         }
+            <script>
+    document.getElementById('copyLinkBtn')?.addEventListener('click', function() {
+        navigator.clipboard.writeText(window.location.href);
+        alert('✅ Link copied! Share with your friends.');
+    });
+</script>
     </script>
 </body>
               </html>
