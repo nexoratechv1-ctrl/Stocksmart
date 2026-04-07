@@ -22,6 +22,12 @@
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav ms-auto">
                     {% if current_user.is_authenticated %}
+                    <!-- Baada ya link ya profile au kabla ya logout -->
+<li class="nav-item">
+    <button id="copyLinkBtn" class="btn btn-sm btn-outline-primary" style="border-radius: 20px;">
+        <i class="fas fa-link"></i> Copy Link
+    </button>
+</li>
                         <li class="nav-item"><a class="nav-link" href="{{ url_for('dashboard') }}">Dashboard</a></li>
                         <li class="nav-item"><a class="nav-link" href="{{ url_for('products') }}">Products</a></li>
                         <li class="nav-item"><a class="nav-link" href="{{ url_for('sell') }}">Sell</a></li>
