@@ -1,1 +1,22 @@
-
+{% extends "base.html" %}
+{% block content %}
+<h2>Low Stock Products</h2>
+<div class="table-responsive">
+    <table class="table table-striped">
+        <thead><tr><th>Name</th><th>Current Quantity</th><th>Threshold</th><th>Suggested Order</th><th>Action</th></tr></thead>
+        <tbody>
+        {% for p in products %}
+        <tr>
+            <td>{{ p.name }}</td>
+            <td class="text-danger">{{ p.quantity }}</td>
+            <td>{{ p.low_stock_threshold }}</td>
+            <td>{{ p.low_stock_threshold - p.quantity + 10 }}</td>
+            <td><a href="{{ url_for('edit_product', id=p.id) }}" class="btn btn-sm btn-primary">Edit</a></td>
+        </tr>
+        {% else %}
+        <tr><td colspan="5" class="text-center">No low stock products. Good job!</td></tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}
