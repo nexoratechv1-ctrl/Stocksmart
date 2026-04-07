@@ -1,1 +1,27 @@
-
+{% extends "base.html" %}
+{% block content %}
+<h2>Products</h2>
+<a href="{{ url_for('add_product') }}" class="btn btn-primary mb-3"><i class="fas fa-plus"></i> Add Product</a>
+<div class="table-responsive">
+    <table class="table table-striped">
+        <thead><tr><th>Name</th><th>Cost Price</th><th>Selling Price</th><th>Quantity</th><th>Actions</th></tr></thead>
+        <tbody>
+        {% for p in products %}
+        <tr>
+            <td>{{ p.name }}</td>
+            <td>TZS {{ p.cost_price }}</td>
+            <td>TZS {{ p.selling_price }}</td>
+            <td>{% if p.quantity <= p.low_stock_threshold %}<span class="badge-low">{{ p.quantity }}</span>{% else %}{{ p.quantity }}{% endif %}</td>
+            <td>
+                <a href="{{ url_for('edit_product', id=p.id) }}" class="btn btn-sm btn-primary">Edit</a>
+                <a href="{{ url_for('delete_product', id=p.id) }}" class="btn btn-sm btn-danger" onclick="return confirm('Delete product?')">Delete</a>
+                <button type="button" class="btn btn-sm btn-secondary" data-bs-toggle="modal" data-bs-target="#stockModal{{ p.id }}">Adjust</button>
+                <!-- Modal for stock adjustment -->
+                <div class="modal fade" id="stockModal{{ p.id }}" tabindex="-1"><div class="modal-dialog"><div class="modal-content"><div class="modal-header"><h5>Adjust Stock: {{ p.name }}</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><form method="POST" action="{{ url_for('adjust_stock', id=p.id) }}"><div class="modal-body"><input type="number" name="quantity" placeholder="Quantity (positive or negative)" class="form-control" required><textarea name="note" placeholder="Reason" class="form-control mt-2"></textarea></div><div class="modal-footer"><button type="submit" class="btn btn-primary">Apply</button></div></form></div></div></div>
+             </td>
+        </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}
