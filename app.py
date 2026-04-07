@@ -11,7 +11,7 @@ app = Flask(__name__)
 app.config['SECRET_KEY'] = 'stocksmart-secret-key-change-in-production'
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///stocksmart.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-app.config['REMEMBER_COOKIE_DURATION'] = timedelta(days=30)  # stay logged in for 30 days
+app.config['REMEMBER_COOKIE_DURATION'] = timedelta(days=30)
 
 db = SQLAlchemy(app)
 login_manager = LoginManager(app)
@@ -22,7 +22,7 @@ class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
     shop_name = db.Column(db.String(100), nullable=False)
     phone = db.Column(db.String(20), unique=True, nullable=False)
-    tin = db.Column(db.String(50), nullable=True)  # Taxpayer ID
+    tin = db.Column(db.String(50), nullable=True)
     is_vat_registered = db.Column(db.Boolean, default=False)
     password_hash = db.Column(db.String(200), nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
@@ -58,12 +58,12 @@ class StockHistory(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     product_id = db.Column(db.Integer, db.ForeignKey('product.id'), nullable=False)
-    change_type = db.Column(db.String(20))  # 'add' or 'remove'
+    change_type = db.Column(db.String(20))
     quantity = db.Column(db.Integer)
     note = db.Column(db.String(200))
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
-# ------------------- HELPER FUNCTIONS -------------------
+# ------------------- HELPERS -------------------
 @login_manager.user_loader
 def load_user(user_id):
     return User.query.get(int(user_id))
@@ -135,22 +135,19 @@ def logout():
 @app.route('/dashboard')
 @login_required
 def dashboard():
-    # Sales today
     today = date.today()
     sales_today = Sale.query.filter_by(user_id=current_user.id).filter(db.func.date(Sale.created_at) == today).all()
     total_sales_today = sum(s.total_amount for s in sales_today)
     total_profit_today = sum(s.profit for s in sales_today)
 
-    # Stock summary
     products = Product.query.filter_by(user_id=current_user.id).all()
     total_stock_value_cost = sum(p.cost_price * p.quantity for p in products)
     total_stock_value_price = sum(p.selling_price * p.quantity for p in products)
-    low_stock_products = [p for p in products if p.quantity <= p.low_stock_threshold]
+    low_stock_count = sum(1 for p in products if p.quantity <= p.low_stock_threshold)
 
-    # Tax reminder (if TIN exists, show next VAT due date)
     tax_due_date = None
+    days_left = None
     if current_user.tin and current_user.is_vat_registered:
-        # VAT due by 20th of next month
         today_dt = datetime.today()
         if today_dt.day < 20:
             tax_due_date = datetime(today_dt.year, today_dt.month, 20)
@@ -164,9 +161,9 @@ def dashboard():
                          total_profit_today=total_profit_today,
                          total_stock_value_cost=total_stock_value_cost,
                          total_stock_value_price=total_stock_value_price,
-                         low_stock_count=len(low_stock_products),
+                         low_stock_count=low_stock_count,
                          tax_due_date=tax_due_date,
-                         days_left=days_left if tax_due_date else None)
+                         days_left=days_left)
 
 # ------------------- PRODUCT MANAGEMENT -------------------
 @app.route('/products')
@@ -190,7 +187,6 @@ def add_product():
         db.session.add(product)
         db.session.commit()
 
-        # Record stock history
         if quantity > 0:
             hist = StockHistory(user_id=current_user.id, product_id=product.id,
                                change_type='add', quantity=quantity, note='Initial stock')
@@ -214,7 +210,6 @@ def edit_product(id):
         product.cost_price = float(request.form['cost_price'])
         product.selling_price = float(request.form['selling_price'])
         product.low_stock_threshold = int(request.form.get('low_stock_threshold', 5))
-        # Do not change quantity here; use stock adjustment feature if needed
         db.session.commit()
         flash('Product updated', 'success')
         return redirect(url_for('products'))
@@ -227,7 +222,6 @@ def delete_product(id):
     if product.user_id != current_user.id:
         flash('Access denied', 'danger')
         return redirect(url_for('products'))
-    # Check if there are sales for this product
     sales = Sale.query.filter_by(product_id=id).first()
     if sales:
         flash('Cannot delete product with sales history', 'danger')
@@ -255,12 +249,11 @@ def adjust_stock(id):
     flash(f'Stock adjusted by {qty}', 'success')
     return redirect(url_for('products'))
 
-# ------------------- SELLING (POS) -------------------
+# ------------------- SELLING -------------------
 @app.route('/sell', methods=['GET', 'POST'])
 @login_required
 def sell():
     if request.method == 'POST':
-        # Expect JSON or form? We'll use form for simplicity
         product_id = request.form.get('product_id')
         quantity = int(request.form['quantity'])
         product = Product.query.get_or_404(product_id)
@@ -271,7 +264,6 @@ def sell():
             flash(f'Not enough stock. Only {product.quantity} available', 'danger')
             return redirect(url_for('sell'))
 
-        # Calculate amounts
         total = product.selling_price * quantity
         profit = (product.selling_price - product.cost_price) * quantity
 
@@ -282,7 +274,6 @@ def sell():
         db.session.add(sale)
         db.session.commit()
 
-        # Stock history
         hist = StockHistory(user_id=current_user.id, product_id=product.id,
                            change_type='remove', quantity=quantity, note=f'Sold {quantity} units')
         db.session.add(hist)
@@ -294,30 +285,46 @@ def sell():
     products = Product.query.filter_by(user_id=current_user.id).filter(Product.quantity > 0).order_by(Product.name).all()
     return render_template('sell.html', products=products)
 
-# ------------------- REPORTS -------------------
+# ------------------- SALES REPORT (FIXED) -------------------
 @app.route('/sales_report')
 @login_required
 def sales_report():
-    filter_type = request.args.get('filter', 'today')  # today, week, month, custom
+    filter_type = request.args.get('filter', 'today')
     start_date = None
     end_date = None
     today_date = date.today()
 
-    if filter_type == 'today':
-        start_date = today_date
-        end_date = today_date
-    elif filter_type == 'week':
-        start_date = today_date - timedelta(days=today_date.weekday())
-        end_date = today_date
-    elif filter_type == 'month':
-        start_date = today_date.replace(day=1)
-        end_date = today_date
-    elif filter_type == 'custom':
-        start_date = datetime.strptime(request.args.get('start'), '%Y-%m-%d').date()
-        end_date = datetime.strptime(request.args.get('end'), '%Y-%m-%d').date()
+    try:
+        if filter_type == 'today':
+            start_date = today_date
+            end_date = today_date
+        elif filter_type == 'week':
+            start_date = today_date - timedelta(days=today_date.weekday())
+            end_date = today_date
+        elif filter_type == 'month':
+            start_date = today_date.replace(day=1)
+            end_date = today_date
+        elif filter_type == 'custom':
+            start_str = request.args.get('start')
+            end_str = request.args.get('end')
+            if start_str and end_str:
+                start_date = datetime.strptime(start_str, '%Y-%m-%d').date()
+                end_date = datetime.strptime(end_str, '%Y-%m-%d').date()
+            else:
+                flash('Please provide both start and end dates', 'warning')
+                return redirect(url_for('sales_report'))
+        else:
+            start_date = today_date
+            end_date = today_date
+    except Exception as e:
+        flash(f'Invalid date format: {e}', 'danger')
+        return redirect(url_for('sales_report'))
 
     if start_date and end_date:
-        sales = Sale.query.filter_by(user_id=current_user.id).filter(db.func.date(Sale.created_at) >= start_date, db.func.date(Sale.created_at) <= end_date).order_by(Sale.created_at.desc()).all()
+        sales = Sale.query.filter_by(user_id=current_user.id).filter(
+            db.func.date(Sale.created_at) >= start_date,
+            db.func.date(Sale.created_at) <= end_date
+        ).order_by(Sale.created_at.desc()).all()
         total_amount = sum(s.total_amount for s in sales)
         total_profit = sum(s.profit for s in sales)
     else:
@@ -325,9 +332,13 @@ def sales_report():
         total_amount = sum(s.total_amount for s in sales)
         total_profit = sum(s.profit for s in sales)
 
-    return render_template('sales_report.html', sales=sales, total_amount=total_amount,
-                         total_profit=total_profit, filter_type=filter_type)
+    return render_template('sales_report.html',
+                         sales=sales,
+                         total_amount=total_amount,
+                         total_profit=total_profit,
+                         filter_type=filter_type)
 
+# ------------------- LOW STOCK -------------------
 @app.route('/low_stock')
 @login_required
 def low_stock():
@@ -339,17 +350,12 @@ def low_stock():
 @login_required
 def tax_reminder():
     user = current_user
-    if not user.tin:
-        flash('Please update your TIN in profile to enable tax reminders', 'warning')
-        return redirect(url_for('profile'))  # we'll add profile route
-    # Compute VAT due if registered
     vat_due = 0
-    if user.is_vat_registered:
-        # For simplicity, calculate VAT on sales this month
+    if user.is_vat_registered and user.tin:
         current_month_start = datetime(datetime.today().year, datetime.today().month, 1)
         sales_this_month = Sale.query.filter_by(user_id=user.id).filter(Sale.created_at >= current_month_start).all()
         total_sales = sum(s.total_amount for s in sales_this_month)
-        vat_due = total_sales * 0.18  # 18% VAT
+        vat_due = total_sales * 0.18
     due_date = None
     today_dt = datetime.today()
     if today_dt.day < 20:
@@ -360,7 +366,7 @@ def tax_reminder():
     days_left = (due_date - today_dt).days
     return render_template('tax_reminder.html', vat_due=vat_due, due_date=due_date, days_left=days_left, tin=user.tin)
 
-# ------------------- USER PROFILE (for TIN update) -------------------
+# ------------------- PROFILE -------------------
 @app.route('/profile', methods=['GET', 'POST'])
 @login_required
 def profile():
@@ -373,7 +379,7 @@ def profile():
         return redirect(url_for('dashboard'))
     return render_template('profile.html', user=current_user)
 
-# ------------------- PWA / SERVICE WORKER -------------------
+# ------------------- PWA -------------------
 @app.route('/manifest.json')
 def manifest():
     return app.send_static_file('manifest.json')
@@ -382,10 +388,9 @@ def manifest():
 def sw():
     return app.send_static_file('service-worker.js', mimetype='application/javascript')
 
-# ------------------- INIT DB AND ADMIN -------------------
+# ------------------- INIT DB -------------------
 def init_db():
     db.create_all()
-    # Optionally create a test user
     if not User.query.first():
         admin = User(shop_name='Test Shop', phone='0712345678', tin='123456789', is_vat_registered=True)
         admin.set_password('test123')
