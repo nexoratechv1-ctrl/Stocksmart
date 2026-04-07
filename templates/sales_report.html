@@ -1,1 +1,61 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>Sales Report</h2>
 
+<div class="mb-3">
+    <a href="?filter=today" class="btn btn-sm {% if filter_type == 'today' %}btn-primary{% else %}btn-outline-primary{% endif %}">Today</a>
+    <a href="?filter=week" class="btn btn-sm {% if filter_type == 'week' %}btn-primary{% else %}btn-outline-primary{% endif %}">This Week</a>
+    <a href="?filter=month" class="btn btn-sm {% if filter_type == 'month' %}btn-primary{% else %}btn-outline-primary{% endif %}">This Month</a>
+    <button class="btn btn-sm btn-secondary" onclick="toggleCustomDate()">Custom Date</button>
+</div>
+
+<div id="customDateDiv" style="display: none;" class="mb-3">
+    <form method="GET" action="{{ url_for('sales_report') }}" class="row g-2">
+        <input type="hidden" name="filter" value="custom">
+        <div class="col-auto"><input type="date" name="start" class="form-control" required></div>
+        <div class="col-auto"><input type="date" name="end" class="form-control" required></div>
+        <div class="col-auto"><button type="submit" class="btn btn-primary">Go</button></div>
+    </form>
+</div>
+
+<script>
+function toggleCustomDate() {
+    var div = document.getElementById('customDateDiv');
+    div.style.display = div.style.display === 'none' ? 'block' : 'none';
+}
+</script>
+
+<div class="alert alert-info">
+    <strong>Total Sales:</strong> TZS {{ "{:,.0f}".format(total_amount) }} &nbsp;|&nbsp;
+    <strong>Total Profit:</strong> TZS {{ "{:,.0f}".format(total_profit) }}
+</div>
+
+<div class="table-responsive">
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Date & Time</th>
+                <th>Product ID</th>
+                <th>Quantity</th>
+                <th>Total (TZS)</th>
+                <th>Profit (TZS)</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for s in sales %}
+            <tr>
+                <td>{{ s.created_at.strftime('%d/%m/%Y %H:%M') }}</td>
+                <td>{{ s.product_id }}</td>
+                <td>{{ s.quantity }}</td>
+                <td>{{ "{:,.0f}".format(s.total_amount) }}</td>
+                <td>{{ "{:,.0f}".format(s.profit) }}</td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="5" class="text-center">No sales records found for this period.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}
