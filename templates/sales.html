@@ -1,1 +1,27 @@
-
+{% extends "base.html" %}
+{% block content %}
+<h2>Sales Report</h2>
+<div class="mb-3">
+    <a href="?filter=today" class="btn btn-sm btn-primary">Today</a>
+    <a href="?filter=week" class="btn btn-sm btn-primary">This Week</a>
+    <a href="?filter=month" class="btn btn-sm btn-primary">This Month</a>
+    <a href="?filter=custom&start=2025-01-01&end=2025-12-31" class="btn btn-sm btn-secondary">Custom (example)</a>
+</div>
+<div class="alert alert-info">Total Sales: TZS {{ "{:,.0f}".format(total_amount) }} | Total Profit: TZS {{ "{:,.0f}".format(total_profit) }}</div>
+<div class="table-responsive">
+    <table class="table table-striped">
+        <thead><tr><th>Date</th><th>Product ID</th><th>Quantity</th><th>Total (TZS)</th><th>Profit (TZS)</th></tr></thead>
+        <tbody>
+        {% for s in sales %}
+        <tr>
+            <td>{{ s.created_at.strftime('%d/%m/%Y %H:%M') }}</td>
+            <td>{{ s.product_id }}</td>
+            <td>{{ s.quantity }}</td>
+            <td>{{ "{:,.0f}".format(s.total_amount) }}</td>
+            <td>{{ "{:,.0f}".format(s.profit) }}</td>
+        </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}
