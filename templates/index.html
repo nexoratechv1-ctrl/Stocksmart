@@ -1,1 +1,11 @@
-
+{% extends "base.html" %}
+{% block content %}
+<div class="text-center py-5">
+    <h1 class="display-4">Welcome to StockSmart</h1>
+    <p class="lead">Simplify your shop inventory, track sales, and never miss a tax deadline.</p>
+    <hr class="my-4">
+    <p>Get started by registering your shop or login to continue.</p>
+    <a href="{{ url_for('register') }}" class="btn btn-primary btn-lg">Register Now</a>
+    <a href="{{ url_for('login') }}" class="btn btn-outline-primary btn-lg">Login</a>
+</div>
+{% endblock %}
