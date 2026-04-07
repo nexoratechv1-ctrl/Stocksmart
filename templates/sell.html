@@ -1,1 +1,19 @@
-
+{% extends "base.html" %}
+{% block content %}
+<h2>Point of Sale</h2>
+<form method="POST">
+    <div class="mb-3"><label>Select Product</label>
+        <select name="product_id" class="form-select" required>
+            {% for p in products %}
+                <option value="{{ p.id }}">{{ p.name }} - TZS {{ p.selling_price }} (Stock: {{ p.quantity }})</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="mb-3"><label>Quantity</label><input type="number" name="quantity" class="form-control" required min="1"></div>
+    <button type="submit" class="btn btn-success">Complete Sale</button>
+    <a href="{{ url_for('dashboard') }}" class="btn btn-secondary">Cancel</a>
+</form>
+{% if not products %}
+<div class="alert alert-warning mt-3">No products with stock. Please add products first.</div>
+{% endif %}
+{% endblock %}
