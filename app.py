@@ -23,7 +23,7 @@ class User(UserMixin, db.Model):
     phone = db.Column(db.String(20), unique=True, nullable=False)
     tin = db.Column(db.String(50), nullable=True)
     is_vat_registered = db.Column(db.Boolean, default=False)
-    is_admin = db.Column(db.Boolean, default=False)   # added for admin features
+    is_admin = db.Column(db.Boolean, default=False)
     password_hash = db.Column(db.String(200), nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
@@ -63,11 +63,16 @@ class StockHistory(db.Model):
     note = db.Column(db.String(200))
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
-# Counter model for total visits
-class SiteStat(db.Model):
+class Comment(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(50), unique=True, nullable=False)
-    value = db.Column(db.Integer, default=0)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    rating = db.Column(db.Integer, nullable=False)  # 1 to 5 stars
+    comment = db.Column(db.Text, nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    is_approved = db.Column(db.Boolean, default=True)  # auto-approve
+
+    def __repr__(self):
+        return f'<Comment {self.rating} stars by user {self.user_id}>'
 
 # ------------------- HELPERS -------------------
 @login_manager.user_loader
@@ -83,29 +88,7 @@ def admin_required(f):
         return f(*args, **kwargs)
     return decorated
 
-# ------------------- VISITOR COUNTER (before each request) -------------------
-@app.before_request
-def count_visitors():
-    # skip static files and favicon
-    if request.endpoint and 'static' in request.endpoint:
-        return
-    if request.path == '/favicon.ico':
-        return
-    stat = SiteStat.query.filter_by(name='total_visitors').first()
-    if not stat:
-        stat = SiteStat(name='total_visitors', value=0)
-        db.session.add(stat)
-        db.session.commit()
-    stat.value += 1
-    db.session.commit()
-
-@app.context_processor
-def inject_globals():
-    stat = SiteStat.query.filter_by(name='total_visitors').first()
-    total_visits = stat.value if stat else 0
-    return dict(total_visits=total_visits)
-
-# ------------------- ROUTES -------------------
+# ------------------- PUBLIC ROUTES -------------------
 @app.route('/')
 def index():
     return render_template('index.html')
@@ -407,19 +390,48 @@ def profile():
         return redirect(url_for('dashboard'))
     return render_template('profile.html', user=current_user)
 
-# ------------------- ADMIN RESET COUNTER (optional) -------------------
-@app.route('/admin/reset_counter')
+# ------------------- FEEDBACK / COMMENT RATING -------------------
+@app.route('/feedback', methods=['GET', 'POST'])
+def feedback():
+    if request.method == 'POST':
+        if not current_user.is_authenticated:
+            flash('Please login to leave a comment.', 'warning')
+            return redirect(url_for('login'))
+        rating = int(request.form.get('rating', 0))
+        comment = request.form.get('comment', '').strip()
+        if rating < 1 or rating > 5 or not comment:
+            flash('Please provide a valid rating (1-5 stars) and comment.', 'danger')
+            return redirect(url_for('feedback'))
+        new_comment = Comment(user_id=current_user.id, rating=rating, comment=comment)
+        db.session.add(new_comment)
+        db.session.commit()
+        flash('Thank you for your feedback!', 'success')
+        return redirect(url_for('feedback'))
+    
+    # Show all approved comments (public)
+    comments = Comment.query.filter_by(is_approved=True).order_by(Comment.created_at.desc()).all()
+    # For logged-in users, show their own unapproved? not needed; all auto-approved.
+    return render_template('feedback.html', comments=comments)
+
+# ------------------- ADMIN DASHBOARD (User Stats & Comments) -------------------
+@app.route('/admin')
 @login_required
 @admin_required
-def reset_counter():
-    stat = SiteStat.query.filter_by(name='total_visitors').first()
-    if stat:
-        stat.value = 0
-        db.session.commit()
-        flash('Visitor counter has been reset to 0.', 'success')
-    else:
-        flash('Counter not found.', 'danger')
-    return redirect(url_for('dashboard'))
+def admin_dashboard():
+    total_users = User.query.count()
+    total_sales_all = Sale.query.count()
+    total_revenue_all = db.session.query(db.func.sum(Sale.total_amount)).scalar() or 0
+    users = User.query.order_by(User.created_at.desc()).all()
+    
+    # Fetch all comments (for admin to see)
+    all_comments = Comment.query.order_by(Comment.created_at.desc()).all()
+    
+    return render_template('admin_dashboard.html',
+                         total_users=total_users,
+                         total_sales_all=total_sales_all,
+                         total_revenue_all=total_revenue_all,
+                         users=users,
+                         comments=all_comments)
 
 # ------------------- PWA -------------------
 @app.route('/manifest.json')
@@ -430,21 +442,18 @@ def manifest():
 def sw():
     return app.send_static_file('service-worker.js', mimetype='application/javascript')
 
-# ------------------- INIT DB AND ADMIN -------------------
+# ------------------- INIT DB -------------------
 def init_db():
     db.create_all()
-    # Create admin user if not exists (first user becomes admin)
+    # Create admin user if none exists
     if not User.query.first():
         admin = User(shop_name='Admin Shop', phone='0712345678', tin='123456789', is_vat_registered=True, is_admin=True)
         admin.set_password('admin123')
         db.session.add(admin)
         db.session.commit()
         print("Admin user created: phone 0712345678, password admin123")
-    # Ensure counter exists
-    if not SiteStat.query.filter_by(name='total_visitors').first():
-        counter = SiteStat(name='total_visitors', value=0)
-        db.session.add(counter)
-        db.session.commit()
+    
+    # No need for SiteStat anymore
 
 with app.app_context():
     init_db()
