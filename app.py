@@ -1,11 +1,10 @@
 import os
-from flask import Flask, render_template, request, redirect, url_for, flash, jsonify
+from flask import Flask, render_template, request, redirect, url_for, flash
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime, date, timedelta
 from functools import wraps
-import json
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'stocksmart-secret-key-change-in-production'
@@ -24,6 +23,7 @@ class User(UserMixin, db.Model):
     phone = db.Column(db.String(20), unique=True, nullable=False)
     tin = db.Column(db.String(50), nullable=True)
     is_vat_registered = db.Column(db.Boolean, default=False)
+    is_admin = db.Column(db.Boolean, default=False)   # added for admin features
     password_hash = db.Column(db.String(200), nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
@@ -63,6 +63,12 @@ class StockHistory(db.Model):
     note = db.Column(db.String(200))
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
+# Counter model for total visits
+class SiteStat(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(50), unique=True, nullable=False)
+    value = db.Column(db.Integer, default=0)
+
 # ------------------- HELPERS -------------------
 @login_manager.user_loader
 def load_user(user_id):
@@ -71,11 +77,33 @@ def load_user(user_id):
 def admin_required(f):
     @wraps(f)
     def decorated(*args, **kwargs):
-        if not current_user.is_authenticated:
-            flash('Please login first.', 'warning')
-            return redirect(url_for('login'))
+        if not current_user.is_authenticated or not current_user.is_admin:
+            flash('Access denied. Admin only.', 'danger')
+            return redirect(url_for('dashboard'))
         return f(*args, **kwargs)
     return decorated
+
+# ------------------- VISITOR COUNTER (before each request) -------------------
+@app.before_request
+def count_visitors():
+    # skip static files and favicon
+    if request.endpoint and 'static' in request.endpoint:
+        return
+    if request.path == '/favicon.ico':
+        return
+    stat = SiteStat.query.filter_by(name='total_visitors').first()
+    if not stat:
+        stat = SiteStat(name='total_visitors', value=0)
+        db.session.add(stat)
+        db.session.commit()
+    stat.value += 1
+    db.session.commit()
+
+@app.context_processor
+def inject_globals():
+    stat = SiteStat.query.filter_by(name='total_visitors').first()
+    total_visits = stat.value if stat else 0
+    return dict(total_visits=total_visits)
 
 # ------------------- ROUTES -------------------
 @app.route('/')
@@ -285,7 +313,7 @@ def sell():
     products = Product.query.filter_by(user_id=current_user.id).filter(Product.quantity > 0).order_by(Product.name).all()
     return render_template('sell.html', products=products)
 
-# ------------------- SALES REPORT (FIXED) -------------------
+# ------------------- SALES REPORT -------------------
 @app.route('/sales_report')
 @login_required
 def sales_report():
@@ -379,6 +407,20 @@ def profile():
         return redirect(url_for('dashboard'))
     return render_template('profile.html', user=current_user)
 
+# ------------------- ADMIN RESET COUNTER (optional) -------------------
+@app.route('/admin/reset_counter')
+@login_required
+@admin_required
+def reset_counter():
+    stat = SiteStat.query.filter_by(name='total_visitors').first()
+    if stat:
+        stat.value = 0
+        db.session.commit()
+        flash('Visitor counter has been reset to 0.', 'success')
+    else:
+        flash('Counter not found.', 'danger')
+    return redirect(url_for('dashboard'))
+
 # ------------------- PWA -------------------
 @app.route('/manifest.json')
 def manifest():
@@ -388,15 +430,21 @@ def manifest():
 def sw():
     return app.send_static_file('service-worker.js', mimetype='application/javascript')
 
-# ------------------- INIT DB -------------------
+# ------------------- INIT DB AND ADMIN -------------------
 def init_db():
     db.create_all()
+    # Create admin user if not exists (first user becomes admin)
     if not User.query.first():
-        admin = User(shop_name='Test Shop', phone='0712345678', tin='123456789', is_vat_registered=True)
-        admin.set_password('test123')
+        admin = User(shop_name='Admin Shop', phone='0712345678', tin='123456789', is_vat_registered=True, is_admin=True)
+        admin.set_password('admin123')
         db.session.add(admin)
         db.session.commit()
-        print("Test user created: phone 0712345678, password test123")
+        print("Admin user created: phone 0712345678, password admin123")
+    # Ensure counter exists
+    if not SiteStat.query.filter_by(name='total_visitors').first():
+        counter = SiteStat(name='total_visitors', value=0)
+        db.session.add(counter)
+        db.session.commit()
 
 with app.app_context():
     init_db()
