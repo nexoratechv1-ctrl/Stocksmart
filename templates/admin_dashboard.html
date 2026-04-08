@@ -1,0 +1,113 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2><i class="fas fa-crown"></i> Admin Dashboard</h2>
+    <p class="lead">Welcome, {{ current_user.shop_name }} (Admin)</p>
+
+    <!-- Stats cards -->
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card text-center">
+                <div class="card-body">
+                    <i class="fas fa-users fa-3x text-primary"></i>
+                    <h3>{{ total_users }}</h3>
+                    <p>Total Registered Users</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card text-center">
+                <div class="card-body">
+                    <i class="fas fa-shopping-cart fa-3x text-success"></i>
+                    <h3>{{ total_sales_all }}</h3>
+                    <p>Total Sales (All Shops)</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card text-center">
+                <div class="card-body">
+                    <i class="fas fa-money-bill-wave fa-3x text-warning"></i>
+                    <h3>TZS {{ "{:,.0f}".format(total_revenue_all) }}</h3>
+                    <p>Total Revenue (All Shops)</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- User List -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5><i class="fas fa-list"></i> Registered Users</h5>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Shop Name</th>
+                            <th>Phone</th>
+                            <th>TIN</th>
+                            <th>VAT Registered</th>
+                            <th>Joined Date</th>
+                            <th>Admin?</th>
+                        </th>
+                    </thead>
+                    <tbody>
+                        {% for user in users %}
+                        <tr>
+                            <td>{{ user.id }}</td>
+                            <td>{{ user.shop_name }}</td>
+                            <td>{{ user.phone }}</td>
+                            <td>{{ user.tin or '-' }}</td>
+                            <td>{{ 'Yes' if user.is_vat_registered else 'No' }}</td>
+                            <td>{{ user.created_at.strftime('%d/%m/%Y') }}</td>
+                            <td>{{ 'Yes' if user.is_admin else 'No' }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Comments / Feedback Section -->
+    <div class="card">
+        <div class="card-header">
+            <h5><i class="fas fa-comments"></i> User Comments & Ratings</h5>
+        </div>
+        <div class="card-body">
+            {% if comments %}
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>User</th>
+                                <th>Rating</th>
+                                <th>Comment</th>
+                                <th>Date</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for c in comments %}
+                            <tr>
+                                <td>{{ c.user.shop_name if c.user else 'Deleted User' }}</td>
+                                <td>
+                                    {% for i in range(c.rating) %}⭐{% endfor %}
+                                </td>
+                                <td>{{ c.comment }}</td>
+                                <td>{{ c.created_at.strftime('%d/%m/%Y %H:%M') }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <p>No comments yet.</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
