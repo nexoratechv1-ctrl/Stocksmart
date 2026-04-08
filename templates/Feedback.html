@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2><i class="fas fa-star"></i> User Feedback</h2>
+    <p class="lead">Share your experience with StockSmart. Your comments help us improve.</p>
+
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5>Leave a Comment & Rating</h5>
+                </div>
+                <div class="card-body">
+                    {% if current_user.is_authenticated %}
+                        <form method="POST">
+                            <div class="mb-3">
+                                <label class="form-label">Your Rating (1-5 stars)</label>
+                                <select name="rating" class="form-select" required>
+                                    <option value="">Select rating</option>
+                                    <option value="5">⭐⭐⭐⭐⭐ - Excellent</option>
+                                    <option value="4">⭐⭐⭐⭐ - Good</option>
+                                    <option value="3">⭐⭐⭐ - Average</option>
+                                    <option value="2">⭐⭐ - Poor</option>
+                                    <option value="1">⭐ - Very Bad</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Your Comment</label>
+                                <textarea name="comment" rows="4" class="form-control" placeholder="Write your feedback here..." required></textarea>
+                            </div>
+                            <button type="submit" class="btn btn-primary">Submit Feedback</button>
+                        </form>
+                    {% else %}
+                        <div class="alert alert-info">
+                            <a href="{{ url_for('login') }}">Login</a> to leave a comment.
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5>What Others Say</h5>
+                </div>
+                <div class="card-body" style="max-height: 500px; overflow-y: auto;">
+                    {% if comments %}
+                        {% for c in comments %}
+                            <div class="border-bottom mb-3 pb-2">
+                                <div class="d-flex justify-content-between">
+                                    <strong>
+                                        {% for i in range(c.rating) %}⭐{% endfor %}
+                                    </strong>
+                                    <small>{{ c.created_at.strftime('%d/%m/%Y') }}</small>
+                                </div>
+                                <p class="mb-1">{{ c.comment }}</p>
+                                <small class="text-muted">— {{ c.user.shop_name if c.user else 'User' }}</small>
+                            </div>
+                        {% endfor %}
+                    {% else %}
+                        <p>No comments yet. Be the first to leave feedback!</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
