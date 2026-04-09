@@ -8,12 +8,10 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-    <!-- PWA manifest -->
     <link rel="manifest" href="{{ url_for('manifest') }}">
 </head>
 <body>
 
-    <!-- Animated background (from style.css) -->
     <div class="animated-bg"></div>
 
     <nav class="navbar navbar-expand-lg fixed-top">
@@ -26,75 +24,24 @@
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav ms-auto">
-                    <li class="nav-item">
-    <a class="nav-link" href="https://youtu.be/jAYCgxVTdAY?si=SYxoH0KytVlOeENV" target="_blank">
-        <i class="fab fa-youtube"></i> Video ya Namna ya Kutumia Website Yetu
-    </a>
-                    </li>
                     {% if current_user.is_authenticated %}
-                        <li class="nav-item">
-                            <a class="nav-link" href="{{ url_for('dashboard') }}">
-                                <i class="fas fa-chart-line"></i> Dashboard
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="{{ url_for('products') }}">
-                                <i class="fas fa-box"></i> Products
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="{{ url_for('sell') }}">
-                                <i class="fas fa-cash-register"></i> Sell
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="{{ url_for('sales_report') }}">
-                                <i class="fas fa-chart-simple"></i> Reports
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="{{ url_for('low_stock') }}">
-                                <i class="fas fa-exclamation-triangle"></i> Low Stock
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="{{ url_for('tax_reminder') }}">
-                                <i class="fas fa-file-invoice-dollar"></i> Tax
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="{{ url_for('feedback') }}">
-                                <i class="fas fa-star"></i> Feedback
-                            </a>
-                        </li>
+                        <li class="nav-item"><a class="nav-link" href="{{ url_for('dashboard') }}"><i class="fas fa-chart-line"></i> Dashboard</a></li>
+                        <li class="nav-item"><a class="nav-link" href="{{ url_for('products') }}"><i class="fas fa-box"></i> Products</a></li>
+                        <li class="nav-item"><a class="nav-link" href="{{ url_for('sell') }}"><i class="fas fa-cash-register"></i> Sell</a></li>
+                        <li class="nav-item"><a class="nav-link" href="{{ url_for('sales_report') }}"><i class="fas fa-chart-simple"></i> Reports</a></li>
+                        <li class="nav-item"><a class="nav-link" href="{{ url_for('low_stock') }}"><i class="fas fa-exclamation-triangle"></i> Low Stock</a></li>
+                        <li class="nav-item"><a class="nav-link" href="{{ url_for('tax_reminder') }}"><i class="fas fa-file-invoice-dollar"></i> Tax</a></li>
+                        <li class="nav-item"><a class="nav-link" href="{{ url_for('feedback') }}"><i class="fas fa-star"></i> Feedback</a></li>
+                        <li class="nav-item"><a class="nav-link" href="{{ url_for('ai_forecast') }}"><i class="fas fa-chart-line"></i> AI Forecast</a></li>
+                        <li class="nav-item"><a class="nav-link" href="{{ url_for('anomaly_history') }}"><i class="fas fa-exclamation-triangle"></i> Anomalies</a></li>
                         {% if current_user.is_admin %}
-                        <li class="nav-item">
-                            <a class="nav-link" href="{{ url_for('admin_dashboard') }}">
-                                <i class="fas fa-crown"></i> Admin
-                            </a>
-                        </li>
+                        <li class="nav-item"><a class="nav-link" href="{{ url_for('admin_dashboard') }}"><i class="fas fa-crown"></i> Admin</a></li>
                         {% endif %}
-                        <li class="nav-item">
-                            <a class="nav-link" href="{{ url_for('profile') }}">
-                                <i class="fas fa-user"></i> {{ current_user.shop_name }}
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="{{ url_for('logout') }}">
-                                <i class="fas fa-sign-out-alt"></i> Logout
-                            </a>
-                        </li>
+                        <li class="nav-item"><a class="nav-link" href="{{ url_for('profile') }}"><i class="fas fa-user"></i> {{ current_user.shop_name }}</a></li>
+                        <li class="nav-item"><a class="nav-link" href="{{ url_for('logout') }}"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
                     {% else %}
-                        <li class="nav-item">
-                            <a class="nav-link" href="{{ url_for('login') }}">
-                                <i class="fas fa-key"></i> Login
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="{{ url_for('register') }}">
-                                <i class="fas fa-user-plus"></i> Register
-                            </a>
-                        </li>
+                        <li class="nav-item"><a class="nav-link" href="{{ url_for('login') }}"><i class="fas fa-key"></i> Login</a></li>
+                        <li class="nav-item"><a class="nav-link" href="{{ url_for('register') }}"><i class="fas fa-user-plus"></i> Register</a></li>
                     {% endif %}
                 </ul>
             </div>
@@ -124,7 +71,6 @@
     </footer>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <!-- Register Service Worker for PWA -->
     <script>
         if ('serviceWorker' in navigator) {
             navigator.serviceWorker.register('/service-worker.js')
@@ -133,4 +79,4 @@
         }
     </script>
 </body>
-                                    </html>
+</html>
