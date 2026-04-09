@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>Anomaly History</h2>
+<p>List of unusual sales events detected by AI.</p>
+<div class="table-responsive">
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Date</th>
+                <th>Type</th>
+                <th>Expected Sales (TZS)</th>
+                <th>Actual Sales (TZS)</th>
+                <th>Severity</th>
+                <th>Notes</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for a in anomalies %}
+            <tr>
+                <td>{{ a.date.strftime('%Y-%m-%d') }}</td>
+                <td><span class="badge {% if a.anomaly_type == 'drop' %}bg-danger{% else %}bg-warning{% endif %}">{{ a.anomaly_type }}</span></td>
+                <td>{{ "{:,.0f}".format(a.expected_sales) }}</td>
+                <td>{{ "{:,.0f}".format(a.actual_sales) }}</td>
+                <td>{{ "%.1f"|format(a.severity) }}</td>
+                <td>{{ a.notes }}</td>
+            </tr>
+            {% else %}
+            <tr><td colspan="6">No anomalies recorded yet.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}
