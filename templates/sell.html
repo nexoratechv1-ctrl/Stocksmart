@@ -5,11 +5,14 @@
     <div class="mb-3"><label>Select Product</label>
         <select name="product_id" class="form-select" required>
             {% for p in products %}
-                <option value="{{ p.id }}">{{ p.name }} - TZS {{ p.selling_price }} (Stock: {{ p.quantity }})</option>
+                <option value="{{ p.id }}">{{ p.name }} - TZS {{ p.selling_price }}/{{ p.unit }} (Stock: {{ p.quantity }} {{ p.unit }})</option>
             {% endfor %}
         </select>
     </div>
-    <div class="mb-3"><label>Quantity</label><input type="number" name="quantity" class="form-control" required min="1"></div>
+    <div class="mb-3"><label>Quantity (in {{ product_unit or 'units' }})</label>
+        <input type="number" step="0.01" name="quantity" class="form-control" required min="0.01">
+        <small class="text-muted">For liquids, enter decimal (e.g., 0.5 for half liter).</small>
+    </div>
     <button type="submit" class="btn btn-success">Complete Sale</button>
     <a href="{{ url_for('dashboard') }}" class="btn btn-secondary">Cancel</a>
 </form>
