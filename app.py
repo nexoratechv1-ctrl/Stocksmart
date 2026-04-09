@@ -129,6 +129,9 @@ def train_forecast(user_id):
     return model, df['date'].max()
 
 # ------------------- ROUTES -------------------
+@app.route('/ping')
+def ping():
+    return "OK"
 @app.route('/')
 def index(): return render_template('index.html')
 
