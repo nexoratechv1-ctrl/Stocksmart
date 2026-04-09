@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container mt-4">
+    <h2><i class="fas fa-robot"></i> AI Sales Forecast</h2>
+    <p class="lead">Predictions for the next 7 days based on your sales history.</p>
+    {% if advice %}
+    <div class="alert alert-info">
+        <strong>💡 Smart Restocking Advice:</strong><br>
+        {% for a in advice %}{{ a }}<br>{% endfor %}
+    </div>
+    {% endif %}
+    <div class="card"><div class="card-body"><canvas id="forecastChart" width="400" height="200"></canvas></div></div>
+    <div class="row mt-4">
+        <div class="col-md-6"><div class="card"><div class="card-header"><h5>How it works</h5></div><div class="card-body"><ul><li>AI analyzes your past sales (at least 7 days).</li><li>Uses linear regression to predict future trends.</li><li>More data = more accurate predictions.</li></ul></div></div></div>
+        <div class="col-md-6"><div class="card"><div class="card-header"><h5>Next 7 Days Prediction (TZS)</h5></div><div class="card-body"><table class="table table-sm">{% for f in forecast %}<tr><td>Day {{ f.day }}</td><td>TZS {{ "{:,.0f}".format(f.sales) }}</td></tr>{% endfor %}</table></div></div></div>
+    </div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    const ctx = document.getElementById('forecastChart').getContext('2d');
+    const forecastData = {{ forecast|tojson }};
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: forecastData.map(f => 'Day ' + f.day),
+            datasets: [{ label: 'Predicted Sales (TZS)', data: forecastData.map(f => f.sales), borderColor: '#48A9A6', fill: true }]
+        }
+    });
+</script>
+{% endblock %}
