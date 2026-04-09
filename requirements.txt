@@ -2,4 +2,6 @@ flask
 flask-sqlalchemy
 flask-login
 werkzeug
-gunicorn
+numpy
+pandas
+scikit-learn
