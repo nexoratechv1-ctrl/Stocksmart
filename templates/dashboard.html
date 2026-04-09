@@ -7,15 +7,47 @@
     <div class="col-md-3 mb-3"><div class="card dashboard-card"><i class="fas fa-boxes"></i><h3>TZS {{ "{:,.0f}".format(total_stock_value_cost) }}</h3><p>Stock Value (Cost)</p></div></div>
     <div class="col-md-3 mb-3"><div class="card dashboard-card"><i class="fas fa-exclamation-triangle"></i><h3>{{ low_stock_count }}</h3><p>Low Stock Items</p></div></div>
 </div>
+
 {% if tax_due_date %}
 <div class="alert alert-info mt-3">📅 Tax reminder: VAT due on {{ tax_due_date.strftime('%d %b %Y') }} ({{ days_left }} days left). <a href="{{ url_for('tax_reminder') }}">View details</a></div>
 {% endif %}
+
+{% if today_anomaly %}
+<div class="alert alert-warning alert-dismissible fade show mt-3" role="alert">
+    <strong><i class="fas fa-exclamation-triangle"></i> Anomaly Detected!</strong><br>
+    {{ today_anomaly.notes }}
+    <hr>
+    <small>This is an AI alert based on your sales history.</small>
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+</div>
+{% endif %}
+
 <div class="row mt-4">
     <div class="col-md-6"><div class="card"><div class="card-body"><h5>Quick Actions</h5><a href="{{ url_for('sell') }}" class="btn btn-success me-2"><i class="fas fa-cash-register"></i> Make Sale</a><a href="{{ url_for('add_product') }}" class="btn btn-primary"><i class="fas fa-plus"></i> Add Product</a></div></div></div>
-    <div class="col-md-6"><div class="card"><div class="card-body"><h5>Tips</h5><p>Keep your stock updated. Low stock items need reordering.</p></div></div></div>
-</div><div class="text-end mb-3">
-    <button id="copyLinkBtn" class="btn btn-sm btn-outline-primary">
-        <i class="fas fa-link"></i> Copy Shop Link
-    </button>
+    <div class="col-md-6"><div class="card"><div class="card-body"><h5>AI Tools</h5><a href="{{ url_for('ai_forecast') }}" class="btn btn-outline-primary me-2"><i class="fas fa-chart-line"></i> Sales Forecast</a><a href="{{ url_for('anomaly_history') }}" class="btn btn-outline-warning"><i class="fas fa-exclamation-triangle"></i> Anomaly History</a></div></div></div>
+</div>
+
+<div class="card mt-4">
+    <div class="card-header bg-info text-white">
+        <i class="fas fa-lightbulb"></i> Tips & Advice for Using StockSmart
+    </div>
+    <div class="card-body">
+        <button class="btn btn-sm btn-outline-primary mb-2" type="button" data-bs-toggle="collapse" data-bs-target="#tipsCollapse">
+            Show/Hide Tips
+        </button>
+        <div class="collapse" id="tipsCollapse">
+            <ul>
+                <li><strong>Getting Started:</strong> Add your products first (Products → Add Product). Include cost price and selling price.</li>
+                <li><strong>Recording Sales:</strong> Use the "Sell" page to quickly record a sale. Stock updates automatically.</li>
+                <li><strong>Low Stock:</strong> Check "Low Stock" page regularly. Set thresholds for each product.</li>
+                <li><strong>Reports:</strong> Use filters to see sales by day, week, month. Export CSV for accounting.</li>
+                <li><strong>Tax Reminders:</strong> Enter your TIN and VAT registration status in your Profile to get reminders.</li>
+                <li><strong>Email Alerts:</strong> Make sure your email is correct in Profile to receive low stock and tax alerts.</li>
+                <li><strong>Liquid Products:</strong> Use units like liter, ml, or gallon. Enter decimal quantities when selling.</li>
+                <li><strong>AI Forecast:</strong> See predicted sales for next 7 days based on your history.</li>
+                <li><strong>Anomaly Detection:</strong> AI alerts you when sales are unusually high or low.</li>
+            </ul>
+        </div>
+    </div>
 </div>
 {% endblock %}
